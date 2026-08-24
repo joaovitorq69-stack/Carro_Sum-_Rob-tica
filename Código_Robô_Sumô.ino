@@ -1,4 +1,4 @@
-
+/*
    ============================================================
                 ROBÔ DE SUMÔ - ARDUINO MEGA 2560
    ============================================================
@@ -37,15 +37,13 @@
    ============================================================
 */
 
-
 // ============================================================
 //                    PINOS DOS SENSORES DE COR
 // ============================================================
 
 const byte PIN_COR_FRENTE_ESQ = A0;
 const byte PIN_COR_FRENTE_DIR = A1;
-const byte PIN_COR_TRAS       = A2;
-
+const byte PIN_COR_TRAS = A2;
 
 // ============================================================
 //                       ULTRASSÔNICO FRENTE
@@ -54,14 +52,12 @@ const byte PIN_COR_TRAS       = A2;
 const byte TRIG_FRENTE = 30;
 const byte ECHO_FRENTE = 31;
 
-
 // ============================================================
 //                       ULTRASSÔNICO TRASEIRO
 // ============================================================
 
 const byte TRIG_TRAS = 32;
 const byte ECHO_TRAS = 33;
-
 
 // ============================================================
 //                    BTS7960 - MOTOR ESQUERDO
@@ -73,7 +69,6 @@ const byte MOTOR_E_LPWM = 6;
 const byte MOTOR_E_REN = 22;
 const byte MOTOR_E_LEN = 23;
 
-
 // ============================================================
 //                    BTS7960 - MOTOR DIREITO
 // ============================================================
@@ -83,7 +78,6 @@ const byte MOTOR_D_LPWM = 10;
 
 const byte MOTOR_D_REN = 24;
 const byte MOTOR_D_LEN = 25;
-
 
 // ============================================================
 //                INVERSÃO DOS MOTORES
@@ -97,15 +91,13 @@ const byte MOTOR_D_LEN = 25;
 // ============================================================
 
 const bool INVERTER_MOTOR_ESQUERDO = false;
-const bool INVERTER_MOTOR_DIREITO  = false;
-
+const bool INVERTER_MOTOR_DIREITO = false;
 
 // ============================================================
 //                  CALIBRAÇÃO DOS SENSORES
 // ============================================================
 
 const bool PRETO_QUANDO_VALOR_MENOR = true;
-
 
 // ============================================================
 //                       LIMIARES
@@ -117,9 +109,8 @@ const bool PRETO_QUANDO_VALOR_MENOR = true;
 // ============================================================
 
 int LIMIAR_ESQUERDO = 500;
-int LIMIAR_DIREITO  = 500;
+int LIMIAR_DIREITO = 500;
 int LIMIAR_TRASEIRO = 500;
-
 
 // ============================================================
 //                   DISTÂNCIAS DO ULTRASSÔNICO
@@ -130,7 +121,6 @@ const int DISTANCIA_DETECCAO_CM = 70;
 const int DISTANCIA_ATAQUE_FORTE_CM = 35;
 
 const unsigned long TIMEOUT_ULTRASSOM_US = 6000;
-
 
 // ============================================================
 //                       VELOCIDADES
@@ -151,7 +141,6 @@ const int VELOCIDADE_RE = 255;
 
 const int VELOCIDADE_FUGA = 255;
 
-
 // ============================================================
 //                   TEMPOS DE MANOBRA
 // ============================================================
@@ -166,14 +155,12 @@ const unsigned long TEMPO_MAX_GIRO_TRASEIRO_MS = 1000;
 
 const unsigned long MEMORIA_ALVO_MS = 180;
 
-
 // ============================================================
 //                 LEITURA DOS ULTRASSÔNICOS
 // ============================================================
 
 float distanciaFrente = 999;
-float distanciaTras   = 999;
-
+float distanciaTras = 999;
 
 // Evita os dois HC-SR04 dispararem juntos
 
@@ -183,28 +170,19 @@ const unsigned long INTERVALO_PING_MS = 35;
 
 bool proximoSensorFrente = true;
 
-
 // ============================================================
 //                      ESTADOS DO ROBÔ
 // ============================================================
 
-enum EstadoRobo
-{
-  PROCURANDO,
-  ATACANDO,
-  GIRANDO_TRASEIRO,
-  ESCAPANDO_BORDA
-};
+enum EstadoRobo { PROCURANDO, ATACANDO, GIRANDO_TRASEIRO, ESCAPANDO_BORDA };
 
 EstadoRobo estado = PROCURANDO;
-
 
 // ============================================================
 //                    ESTADOS DA FUGA
 // ============================================================
 
-enum TipoFuga
-{
+enum TipoFuga {
   FUGA_NENHUMA,
 
   FUGA_FRENTE_ESQ,
@@ -216,29 +194,21 @@ enum TipoFuga
 
 TipoFuga tipoFuga = FUGA_NENHUMA;
 
-
 // ============================================================
 //                       ETAPAS DA FUGA
 // ============================================================
 
-enum EtapaFuga
-{
-  ETAPA_RECUAR,
-  ETAPA_GIRAR,
-  ETAPA_AVANCAR
-};
+enum EtapaFuga { ETAPA_RECUAR, ETAPA_GIRAR, ETAPA_AVANCAR };
 
 EtapaFuga etapaFuga = ETAPA_RECUAR;
 
 unsigned long inicioEtapaFuga = 0;
-
 
 // ============================================================
 //                MEMÓRIA DO ADVERSÁRIO
 // ============================================================
 
 unsigned long ultimoAlvoFrente = 0;
-
 
 // ============================================================
 //                    SENTIDO DA BUSCA
@@ -251,7 +221,6 @@ unsigned long ultimoAlvoFrente = 0;
 
 int sentidoBusca = 1;
 
-
 // ============================================================
 //                     FUNÇÃO MOTOR BTS7960
 // ============================================================
@@ -263,121 +232,81 @@ int sentidoBusca = 1;
 //
 // ============================================================
 
-void controlarMotor(
-  int velocidade,
-  byte RPWM,
-  byte LPWM,
-  bool inverter
-)
-{
+void controlarMotor(int velocidade, byte RPWM, byte LPWM, bool inverter) {
   velocidade = constrain(velocidade, -255, 255);
 
-  if (inverter)
-  {
+  if (inverter) {
     velocidade = -velocidade;
   }
 
-
   // MOTOR PARADO
 
-  if (velocidade == 0)
-  {
+  if (velocidade == 0) {
     analogWrite(RPWM, 0);
     analogWrite(LPWM, 0);
 
     return;
   }
 
-
   // FRENTE
 
-  if (velocidade > 0)
-  {
+  if (velocidade > 0) {
     analogWrite(RPWM, velocidade);
     analogWrite(LPWM, 0);
   }
 
-
   // RÉ
 
-  else
-  {
+  else {
     analogWrite(RPWM, 0);
     analogWrite(LPWM, -velocidade);
   }
 }
 
-
 // ============================================================
 //                     MOTOR ESQUERDO
 // ============================================================
 
-void motorEsquerdo(int velocidade)
-{
-  controlarMotor(
-    velocidade,
-    MOTOR_E_RPWM,
-    MOTOR_E_LPWM,
-    INVERTER_MOTOR_ESQUERDO
-  );
+void motorEsquerdo(int velocidade) {
+  controlarMotor(velocidade, MOTOR_E_RPWM, MOTOR_E_LPWM,
+                 INVERTER_MOTOR_ESQUERDO);
 }
-
 
 // ============================================================
 //                      MOTOR DIREITO
 // ============================================================
 
-void motorDireito(int velocidade)
-{
-  controlarMotor(
-    velocidade,
-    MOTOR_D_RPWM,
-    MOTOR_D_LPWM,
-    INVERTER_MOTOR_DIREITO
-  );
+void motorDireito(int velocidade) {
+  controlarMotor(velocidade, MOTOR_D_RPWM, MOTOR_D_LPWM,
+                 INVERTER_MOTOR_DIREITO);
 }
-
 
 // ============================================================
 //                    CONTROLAR DOIS MOTORES
 // ============================================================
 
-void mover(int esquerdo, int direito)
-{
+void mover(int esquerdo, int direito) {
   motorEsquerdo(esquerdo);
   motorDireito(direito);
 }
-
 
 // ============================================================
 //                         PARAR
 // ============================================================
 
-void parar()
-{
-  mover(0, 0);
-}
-
+void parar() { mover(0, 0); }
 
 // ============================================================
 //                       ANDAR PARA FRENTE
 // ============================================================
 
-void frente(int velocidade)
-{
-  mover(velocidade, velocidade);
-}
-
+void frente(int velocidade) { mover(velocidade, velocidade); }
 
 // ============================================================
 //                             RÉ
 // ============================================================
 
-void re(int velocidade)
-{
-  mover(-velocidade, -velocidade);
-}
-
+void re(int velocidade) { mover(-velocidade, -velocidade); }
 
 // ============================================================
 //                   GIRO PARA A DIREITA
@@ -392,12 +321,10 @@ void re(int velocidade)
 //
 // ============================================================
 
-void girarDireita(int velocidade)
-{
+void girarDireita(int velocidade) {
   motorEsquerdo(velocidade);
   motorDireito(0);
 }
-
 
 // ============================================================
 //                   GIRO PARA A ESQUERDA
@@ -410,72 +337,54 @@ void girarDireita(int velocidade)
 //
 // ============================================================
 
-void girarEsquerda(int velocidade)
-{
+void girarEsquerda(int velocidade) {
   motorEsquerdo(0);
   motorDireito(velocidade);
 }
-
 
 // ============================================================
 //                  VERIFICAR SE É PRETO
 // ============================================================
 
-bool detectarPreto(int valor, int limiar)
-{
-  if (PRETO_QUANDO_VALOR_MENOR)
-  {
+bool detectarPreto(int valor, int limiar) {
+  if (PRETO_QUANDO_VALOR_MENOR) {
     return valor < limiar;
-  }
-  else
-  {
+  } else {
     return valor > limiar;
   }
 }
-
 
 // ============================================================
 //                   LEITURA DOS SENSORES DE COR
 // ============================================================
 
 int valorCorEsquerdo = 0;
-int valorCorDireito  = 0;
+int valorCorDireito = 0;
 int valorCorTraseiro = 0;
 
-
 bool bordaEsquerda = false;
-bool bordaDireita  = false;
+bool bordaDireita = false;
 bool bordaTraseira = false;
 
-
-void lerSensoresBorda()
-{
+void lerSensoresBorda() {
   valorCorEsquerdo = analogRead(PIN_COR_FRENTE_ESQ);
 
   valorCorDireito = analogRead(PIN_COR_FRENTE_DIR);
 
   valorCorTraseiro = analogRead(PIN_COR_TRAS);
 
+  bordaEsquerda = detectarPreto(valorCorEsquerdo, LIMIAR_ESQUERDO);
 
-  bordaEsquerda =
-    detectarPreto(valorCorEsquerdo, LIMIAR_ESQUERDO);
+  bordaDireita = detectarPreto(valorCorDireito, LIMIAR_DIREITO);
 
-
-  bordaDireita =
-    detectarPreto(valorCorDireito, LIMIAR_DIREITO);
-
-
-  bordaTraseira =
-    detectarPreto(valorCorTraseiro, LIMIAR_TRASEIRO);
+  bordaTraseira = detectarPreto(valorCorTraseiro, LIMIAR_TRASEIRO);
 }
-
 
 // ============================================================
 //                 LEITURA DO HC-SR04
 // ============================================================
 
-float lerUltrassonico(byte trig, byte echo)
-{
+float lerUltrassonico(byte trig, byte echo) {
   digitalWrite(trig, LOW);
 
   delayMicroseconds(2);
@@ -486,191 +395,138 @@ float lerUltrassonico(byte trig, byte echo)
 
   digitalWrite(trig, LOW);
 
-
-  unsigned long duracao =
-    pulseIn(echo, HIGH, TIMEOUT_ULTRASSOM_US);
-
+  unsigned long duracao = pulseIn(echo, HIGH, TIMEOUT_ULTRASSOM_US);
 
   // Nada encontrado
 
-  if (duracao == 0)
-  {
+  if (duracao == 0) {
     return 999;
   }
 
-
   float distancia = duracao * 0.0343 / 2.0;
-
 
   return distancia;
 }
-
 
 // ============================================================
 //             ATUALIZAR ULTRASSÔNICOS ALTERNADAMENTE
 // ============================================================
 
-void atualizarUltrassonicos()
-{
+void atualizarUltrassonicos() {
   unsigned long agora = millis();
 
-
-  if (agora - ultimoPing < INTERVALO_PING_MS)
-  {
+  if (agora - ultimoPing < INTERVALO_PING_MS) {
     return;
   }
 
-
   ultimoPing = agora;
 
-
-  if (proximoSensorFrente)
-  {
-    distanciaFrente =
-      lerUltrassonico(TRIG_FRENTE, ECHO_FRENTE);
+  if (proximoSensorFrente) {
+    distanciaFrente = lerUltrassonico(TRIG_FRENTE, ECHO_FRENTE);
+  } else {
+    distanciaTras = lerUltrassonico(TRIG_TRAS, ECHO_TRAS);
   }
-  else
-  {
-    distanciaTras =
-      lerUltrassonico(TRIG_TRAS, ECHO_TRAS);
-  }
-
 
   proximoSensorFrente = !proximoSensorFrente;
 }
-
 
 // ============================================================
 //                  ADVERSÁRIO NA FRENTE?
 // ============================================================
 
-bool adversarioFrente()
-{
-  return (
-    distanciaFrente > 2 &&
-    distanciaFrente <= DISTANCIA_DETECCAO_CM
-  );
+bool adversarioFrente() {
+  return (distanciaFrente > 2 && distanciaFrente <= DISTANCIA_DETECCAO_CM);
 }
-
 
 // ============================================================
 //                   ADVERSÁRIO ATRÁS?
 // ============================================================
 
-bool adversarioTras()
-{
-  return (
-    distanciaTras > 2 &&
-    distanciaTras <= DISTANCIA_DETECCAO_CM
-  );
+bool adversarioTras() {
+  return (distanciaTras > 2 && distanciaTras <= DISTANCIA_DETECCAO_CM);
 }
-
 
 // ============================================================
 //                  INICIAR FUGA DA BORDA
 // ============================================================
 
-void iniciarFuga(TipoFuga novaFuga)
-{
+void iniciarFuga(TipoFuga novaFuga) {
   estado = ESCAPANDO_BORDA;
 
   tipoFuga = novaFuga;
 
   inicioEtapaFuga = millis();
 
-
-  if (novaFuga == FUGA_TRASEIRA)
-  {
+  if (novaFuga == FUGA_TRASEIRA) {
     etapaFuga = ETAPA_AVANCAR;
-  }
-  else
-  {
+  } else {
     etapaFuga = ETAPA_RECUAR;
   }
 }
-
 
 // ============================================================
 //                    DETECTAR SITUAÇÃO DE BORDA
 // ============================================================
 
-bool verificarBorda()
-{
+bool verificarBorda() {
   // ----------------------------------------------------------
   // BORDA TRASEIRA
   // ----------------------------------------------------------
 
-  if (bordaTraseira)
-  {
+  if (bordaTraseira) {
     iniciarFuga(FUGA_TRASEIRA);
 
     return true;
   }
 
-
   // ----------------------------------------------------------
   // DOIS SENSORES FRONTAIS
   // ----------------------------------------------------------
 
-  if (bordaEsquerda && bordaDireita)
-  {
+  if (bordaEsquerda && bordaDireita) {
     iniciarFuga(FUGA_FRENTE_AMBOS);
 
     return true;
   }
 
-
   // ----------------------------------------------------------
   // SOMENTE ESQUERDA
   // ----------------------------------------------------------
 
-  if (bordaEsquerda)
-  {
+  if (bordaEsquerda) {
     iniciarFuga(FUGA_FRENTE_ESQ);
 
     return true;
   }
 
-
   // ----------------------------------------------------------
   // SOMENTE DIREITA
   // ----------------------------------------------------------
 
-  if (bordaDireita)
-  {
+  if (bordaDireita) {
     iniciarFuga(FUGA_FRENTE_DIR);
 
     return true;
   }
 
-
   return false;
 }
-
 
 // ============================================================
 //                      EXECUTAR FUGA
 // ============================================================
 
-void executarFuga()
-{
+void executarFuga() {
   unsigned long agora = millis();
-
 
   // ==========================================================
   // BORDA TRASEIRA
   // ==========================================================
 
-  if (tipoFuga == FUGA_TRASEIRA)
-  {
+  if (tipoFuga == FUGA_TRASEIRA) {
     frente(VELOCIDADE_FUGA);
 
-
-    if (
-      agora - inicioEtapaFuga >=
-      TEMPO_FRENTE_BORDA_TRASEIRA_MS
-    )
-    {
+    if (agora - inicioEtapaFuga >= TEMPO_FRENTE_BORDA_TRASEIRA_MS) {
       estado = PROCURANDO;
 
       tipoFuga = FUGA_NENHUMA;
@@ -679,22 +535,15 @@ void executarFuga()
     return;
   }
 
-
   // ==========================================================
   // PRIMEIRA ETAPA:
   // RÉ
   // ==========================================================
 
-  if (etapaFuga == ETAPA_RECUAR)
-  {
+  if (etapaFuga == ETAPA_RECUAR) {
     re(VELOCIDADE_RE);
 
-
-    if (
-      agora - inicioEtapaFuga >=
-      TEMPO_RE_BORDA_MS
-    )
-    {
+    if (agora - inicioEtapaFuga >= TEMPO_RE_BORDA_MS) {
       etapaFuga = ETAPA_GIRAR;
 
       inicioEtapaFuga = agora;
@@ -703,7 +552,6 @@ void executarFuga()
     return;
   }
 
-
   // ==========================================================
   // SEGUNDA ETAPA:
   // GIRAR PARA DENTRO DA ARENA
@@ -711,55 +559,41 @@ void executarFuga()
   // AGORA O GIRO USA APENAS UMA RODA.
   // ==========================================================
 
-  if (etapaFuga == ETAPA_GIRAR)
-  {
+  if (etapaFuga == ETAPA_GIRAR) {
     // --------------------------------------------------------
     // Borda na esquerda:
     // gira para direita usando somente motor esquerdo
     // --------------------------------------------------------
 
-    if (tipoFuga == FUGA_FRENTE_ESQ)
-    {
+    if (tipoFuga == FUGA_FRENTE_ESQ) {
       girarDireita(VELOCIDADE_GIRO);
     }
-
 
     // --------------------------------------------------------
     // Borda na direita:
     // gira para esquerda usando somente motor direito
     // --------------------------------------------------------
 
-    else if (tipoFuga == FUGA_FRENTE_DIR)
-    {
+    else if (tipoFuga == FUGA_FRENTE_DIR) {
       girarEsquerda(VELOCIDADE_GIRO);
     }
-
 
     // --------------------------------------------------------
     // Os dois sensores encontraram preto.
     // Alternamos o lado da busca.
     // --------------------------------------------------------
 
-    else if (tipoFuga == FUGA_FRENTE_AMBOS)
-    {
-      if (sentidoBusca > 0)
-      {
+    else if (tipoFuga == FUGA_FRENTE_AMBOS) {
+      if (sentidoBusca > 0) {
         girarDireita(VELOCIDADE_GIRO);
-      }
-      else
-      {
+      } else {
         girarEsquerda(VELOCIDADE_GIRO);
       }
 
       sentidoBusca = -sentidoBusca;
     }
 
-
-    if (
-      agora - inicioEtapaFuga >=
-      TEMPO_GIRO_BORDA_MS
-    )
-    {
+    if (agora - inicioEtapaFuga >= TEMPO_GIRO_BORDA_MS) {
       estado = PROCURANDO;
 
       tipoFuga = FUGA_NENHUMA;
@@ -769,32 +603,26 @@ void executarFuga()
   }
 }
 
-
 // ============================================================
 //                      ATAQUE FRONTAL
 // ============================================================
 
-void atacar()
-{
+void atacar() {
   // Muito perto:
   // potência total.
 
-  if (distanciaFrente <= DISTANCIA_ATAQUE_FORTE_CM)
-  {
+  if (distanciaFrente <= DISTANCIA_ATAQUE_FORTE_CM) {
     frente(255);
   }
 
-  else
-  {
+  else {
     // Mantém velocidade alta.
 
     frente(230);
   }
 
-
   ultimoAlvoFrente = millis();
 }
-
 
 // ============================================================
 //             INICIAR GIRO PARA ADVERSÁRIO TRASEIRO
@@ -802,19 +630,15 @@ void atacar()
 
 unsigned long inicioGiroTraseiro = 0;
 
-
-void iniciarGiroTraseiro()
-{
+void iniciarGiroTraseiro() {
   estado = GIRANDO_TRASEIRO;
 
   inicioGiroTraseiro = millis();
-
 
   // Alterna o lado da rotação.
 
   sentidoBusca = -sentidoBusca;
 }
-
 
 // ============================================================
 //               GIRAR PARA QUEM ESTÁ ATRÁS
@@ -826,15 +650,13 @@ void iniciarGiroTraseiro()
 //
 // ============================================================
 
-void executarGiroTraseiro()
-{
+void executarGiroTraseiro() {
   // ----------------------------------------------------------
   // Primeiro verifica se já conseguiu colocar o adversário
   // na frente.
   // ----------------------------------------------------------
 
-  if (adversarioFrente())
-  {
+  if (adversarioFrente()) {
     estado = ATACANDO;
 
     ultimoAlvoFrente = millis();
@@ -844,7 +666,6 @@ void executarGiroTraseiro()
     return;
   }
 
-
   // ----------------------------------------------------------
   // GIRO DE BUSCA
   //
@@ -852,15 +673,11 @@ void executarGiroTraseiro()
   // A outra permanece parada.
   // ----------------------------------------------------------
 
-  if (sentidoBusca > 0)
-  {
+  if (sentidoBusca > 0) {
     girarDireita(VELOCIDADE_GIRO);
-  }
-  else
-  {
+  } else {
     girarEsquerda(VELOCIDADE_GIRO);
   }
-
 
   // ----------------------------------------------------------
   // Segurança:
@@ -868,15 +685,10 @@ void executarGiroTraseiro()
   // não gira para sempre.
   // ----------------------------------------------------------
 
-  if (
-    millis() - inicioGiroTraseiro >
-    TEMPO_MAX_GIRO_TRASEIRO_MS
-  )
-  {
+  if (millis() - inicioGiroTraseiro > TEMPO_MAX_GIRO_TRASEIRO_MS) {
     estado = PROCURANDO;
   }
 }
-
 
 // ============================================================
 //                      PROCURAR ADVERSÁRIO
@@ -896,10 +708,8 @@ void executarGiroTraseiro()
 //
 // ============================================================
 
-void procurar()
-{
-  if (sentidoBusca > 0)
-  {
+void procurar() {
+  if (sentidoBusca > 0) {
     // Motor esquerdo ligado
     // Motor direito desligado
 
@@ -907,8 +717,7 @@ void procurar()
     motorDireito(0);
   }
 
-  else
-  {
+  else {
     // Motor esquerdo desligado
     // Motor direito ligado
 
@@ -917,15 +726,12 @@ void procurar()
   }
 }
 
-
 // ============================================================
 //                         SETUP
 // ============================================================
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-
 
   // ==========================================================
   // ULTRASSÔNICOS
@@ -937,10 +743,8 @@ void setup()
   pinMode(TRIG_TRAS, OUTPUT);
   pinMode(ECHO_TRAS, INPUT);
 
-
   digitalWrite(TRIG_FRENTE, LOW);
   digitalWrite(TRIG_TRAS, LOW);
-
 
   // ==========================================================
   // BTS7960 MOTOR ESQUERDO
@@ -952,7 +756,6 @@ void setup()
   pinMode(MOTOR_E_REN, OUTPUT);
   pinMode(MOTOR_E_LEN, OUTPUT);
 
-
   // ==========================================================
   // BTS7960 MOTOR DIREITO
   // ==========================================================
@@ -962,7 +765,6 @@ void setup()
 
   pinMode(MOTOR_D_REN, OUTPUT);
   pinMode(MOTOR_D_LEN, OUTPUT);
-
 
   // ==========================================================
   // HABILITA OS BTS7960
@@ -974,9 +776,7 @@ void setup()
   digitalWrite(MOTOR_D_REN, HIGH);
   digitalWrite(MOTOR_D_LEN, HIGH);
 
-
   parar();
-
 
   // ==========================================================
   // MENSAGENS INICIAIS
@@ -996,19 +796,16 @@ void setup()
   Serial.println("Sistema iniciado.");
 }
 
-
 // ============================================================
 //                          LOOP
 // ============================================================
 
-void loop()
-{
+void loop() {
   // ==========================================================
   // 1 - SENSORES DA BORDA
   // ==========================================================
 
   lerSensoresBorda();
-
 
   // ==========================================================
   // 2 - ULTRASSÔNICOS
@@ -1016,50 +813,42 @@ void loop()
 
   atualizarUltrassonicos();
 
-
   // ==========================================================
   // 3 - SE ESTAMOS ESCAPANDO,
   // continuamos a manobra.
   // ==========================================================
 
-  if (estado == ESCAPANDO_BORDA)
-  {
+  if (estado == ESCAPANDO_BORDA) {
     executarFuga();
 
     return;
   }
-
 
   // ==========================================================
   // 4 - BORDA SEMPRE TEM PRIORIDADE
   // ==========================================================
 
-  if (verificarBorda())
-  {
+  if (verificarBorda()) {
     executarFuga();
 
     return;
   }
 
-
   // ==========================================================
   // 5 - SE ESTAMOS GIRANDO PORQUE VIMOS O ADVERSÁRIO ATRÁS
   // ==========================================================
 
-  if (estado == GIRANDO_TRASEIRO)
-  {
+  if (estado == GIRANDO_TRASEIRO) {
     executarGiroTraseiro();
 
     return;
   }
 
-
   // ==========================================================
   // 6 - ADVERSÁRIO NA FRENTE
   // ==========================================================
 
-  if (adversarioFrente())
-  {
+  if (adversarioFrente()) {
     estado = ATACANDO;
 
     atacar();
@@ -1067,13 +856,11 @@ void loop()
     return;
   }
 
-
   // ==========================================================
   // 7 - ADVERSÁRIO ATRÁS
   // ==========================================================
 
-  if (adversarioTras())
-  {
+  if (adversarioTras()) {
     iniciarGiroTraseiro();
 
     executarGiroTraseiro();
@@ -1081,21 +868,15 @@ void loop()
     return;
   }
 
-
   // ==========================================================
   // 8 - MEMÓRIA DO ATAQUE
   // ==========================================================
 
-  if (
-    estado == ATACANDO &&
-    millis() - ultimoAlvoFrente < MEMORIA_ALVO_MS
-  )
-  {
+  if (estado == ATACANDO && millis() - ultimoAlvoFrente < MEMORIA_ALVO_MS) {
     frente(VELOCIDADE_ATAQUE);
 
     return;
   }
-
 
   // ==========================================================
   // 9 - NENHUM ADVERSÁRIO
