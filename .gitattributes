@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Detecta arquivos de texto automaticamente e força o fim de linha como LF (padrão)
+* text=auto eol=lf
+
+*.ino text=auto eol=lf
+*.md text=auto eol=lf
+LICENSE text=auto eol=lf
+*.ino linguist-language=Arduino
